@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TITAN AI TRADER</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1220;--card:#151f31;--accent:#36c9a7;--muted:#a9b5c8}*{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:#f4f7fb;font:16px system-ui,Arial,sans-serif}header{padding:22px max(5vw,18px);background:#101a2b;border-bottom:1px solid #253149}
+    main{max-width:1050px;margin:auto;padding:20px}h1{margin:0;color:var(--accent)}.sub{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:18px 0}
+    section{background:var(--card);border:1px solid #28364d;border-radius:14px;padding:18px}button,input{font:inherit;border-radius:8px;padding:10px;border:1px solid #42506a;background:#0e1726;color:white}button{cursor:pointer;margin:4px}button:hover{border-color:var(--accent)}.danger{color:#ffb3aa}.status{font-weight:700;color:var(--accent)}pre{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted)}
+  </style>
+</head>
+<body><header><h1>TITAN AI TRADER</h1><div class="sub">لوحة مراقبة تجريبية — التنفيذ الحقيقي غير متاح</div></header>
+<main>
+  <section><label for="key">مفتاح API المحلي</label><br><input id="key" type="password" autocomplete="off" placeholder="أدخل TITAN_API_KEY"><button onclick="saveKey()">حفظ محلياً</button><button onclick="refresh()">تحديث الحالة</button></section>
+  <div class="grid">
+    <section><h2>حالة النظام</h2><div id="status" class="status">غير متصل</div><p>التنفيذ: معطل دائماً في هذه النسخة.</p></section>
+    <section><h2>اتصال MT5 التجريبي</h2><button onclick="connectMT5()">فحص الاتصال</button><pre id="account">لا توجد بيانات</pre></section>
+    <section><h2>إجراءات السلامة</h2><button onclick="control('pause')">إيقاف مؤقت</button><button onclick="control('resume')">استئناف المراقبة</button><button class="danger" onclick="control('emergency')">طوارئ</button></section>
+  </div>
+  <section><h2>سجل الأحداث</h2><button onclick="loadAudit()">تحميل السجل</button><pre id="audit">—</pre></section>
+  <p class="sub">لا تدخل كلمة مرور MT5 أو رمز Telegram هنا. لا تشارك مفتاح API، ولا تعرض الخدمة للإنترنت دون VPN/HTTPS وضوابط وصول مناسبة.</p>
+</main>
+<script>
+  const apiKey=()=>localStorage.getItem('titan_api_key')||'';
+  function saveKey(){localStorage.setItem('titan_api_key',document.getElementById('key').value);refresh()}
+  async function api(path,options={}){const r=await fetch(path,{...options,headers:{'Authorization':'Bearer '+apiKey(),'Content-Type':'application/json',...(options.headers||{})}});const data=await r.json();if(!r.ok)throw Error(data.detail||r.statusText);return data}
+  async function refresh(){try{const d=await api('/api/status');document.getElementById('status').textContent=`${d.mode} | ${d.paused?'متوقف مؤقتاً':'نشط للمراقبة'}${d.emergency?' | طوارئ':''}`;}catch(e){document.getElementById('status').textContent=e.message}}
+  async function connectMT5(){try{const d=await api('/api/mt5/connect',{method:'POST'});document.getElementById('account').textContent=JSON.stringify(d.account,null,2)}catch(e){document.getElementById('account').textContent=e.message}}
+  async function control(action){try{const d=await api('/api/control/'+action,{method:'POST',body:JSON.stringify({reason:'dashboard'})});alert(JSON.stringify(d));refresh()}catch(e){alert(e.message)}}
+  async function loadAudit(){try{document.getElementById('audit').textContent=JSON.stringify(await api('/api/audit'),null,2)}catch(e){document.getElementById('audit').textContent=e.message}}
+</script></body></html>
